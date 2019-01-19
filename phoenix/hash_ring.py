@@ -20,7 +20,7 @@ class Node(object):
         return self.start == other.start and self.data == other.data
 
 
-class MoveRequest(object):
+class ReshardUnit(object):
     def __init__(self, from_node, to_node, ranges):
         self.from_node = from_node
         self.to_node = to_node
@@ -84,7 +84,7 @@ class HashRing(object):
 
             if end_node_idx < len(self.ring):
                 moves.append(
-                    MoveRequest(
+                    ReshardUnit(
                         from_node=from_node,
                         to_node=self.ring[start_node_idx],
                         ranges=[
@@ -99,7 +99,7 @@ class HashRing(object):
             else:
                 # We are looping on the ring therefore we need two ranges to be moved
                 moves.append(
-                    MoveRequest(
+                    ReshardUnit(
                         from_node=from_node,
                         to_node=self.ring[start_node_idx],
                         ranges=[
@@ -171,7 +171,7 @@ class TestFunctions(unittest.TestCase):
 
         self.assertEqual(
             [
-                MoveRequest(
+                ReshardUnit(
                     Node(200000000, "shard_0"),
                     Node(300000000, "shard_1"),
                     [Range(300000000, 500000000 - 300000000)],
@@ -194,7 +194,7 @@ class TestFunctions(unittest.TestCase):
         moves = ring.add("shard_1", generator=lambda: 600000000)
         self.assertEqual(
             [
-                MoveRequest(
+                ReshardUnit(
                     Node(500000000, "shard_0"),
                     Node(600000000, "shard_1"),
                     [Range(600000000, 800000000 - 600000000)],
@@ -234,7 +234,7 @@ class TestFunctions(unittest.TestCase):
 
         self.assertEqual(
             [
-                MoveRequest(
+                ReshardUnit(
                     Node(200000000, "shard_0"),
                     Node(400000000, "shard_1"),
                     [Range(400000000, 1000000000 - 400000000), Range(0, 200000000)],
@@ -258,7 +258,7 @@ class TestFunctions(unittest.TestCase):
         moves = ring.add("shard_2", generator=lambda: 600000000)
         self.assertEqual(
             [
-                MoveRequest(
+                ReshardUnit(
                     Node(400000000, "shard_1"),
                     Node(600000000, "shard_2"),
                     [Range(600000000, 1000000000 - 600000000), Range(0, 200000000)],
@@ -297,7 +297,7 @@ class TestFunctions(unittest.TestCase):
         moves = ring.add("shard_1", generator=lambda: 200000000)
         self.assertEqual(
             [
-                MoveRequest(
+                ReshardUnit(
                     Node(500000000, "shard_0"),
                     Node(200000000, "shard_1"),
                     [Range(200000000, 500000000 - 200000000)],
@@ -321,7 +321,7 @@ class TestFunctions(unittest.TestCase):
         moves = ring.add("shard_2", generator=lambda: 100000000)
         self.assertEqual(
             [
-                MoveRequest(
+                ReshardUnit(
                     Node(500000000, "shard_0"),
                     Node(100000000, "shard_2"),
                     [Range(100000000, 200000000 - 100000000)],
