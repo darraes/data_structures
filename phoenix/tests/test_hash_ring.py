@@ -1,12 +1,6 @@
 import unittest
 
-import os, sys, inspect
-
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-
-from hash_ring import *
+from phoenix.hash_ring import *
 
 
 class TestFunctions(unittest.TestCase):
@@ -369,7 +363,3 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(
             "shard_0", HashRing._find_partition(ring._ring, 900000000).data
         )
-
-
-if __name__ == "__main__":
-    unittest.main()
