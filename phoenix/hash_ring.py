@@ -79,7 +79,7 @@ class HashRing(object):
         # move
         for n in new_nodes:
             from_node = HashRing._find_partition(old_ring, n.start)
-            start_node_idx = HashRing._find_partition_idx(self.ring, n.start) - 1
+            start_node_idx = HashRing._find_partition_idx(self.ring, n.start)
             end_node_idx = start_node_idx + 1
 
             if end_node_idx < len(self.ring):
@@ -124,15 +124,15 @@ class HashRing(object):
 
     @staticmethod
     def _find_partition(ring, partition_hash):
-        node_idx = HashRing._find_partition_idx(ring, partition_hash)
-        # If node_idx is 0, that means the current hash is smaller than the hash of the
-        # node at index 0 therefore we need to grab the last node of the ring
-        # (cicle to the back)
-        return ring[node_idx - 1] if node_idx > 0 else ring[-1]
+        return ring[HashRing._find_partition_idx(ring, partition_hash)]
 
     @staticmethod
     def _find_partition_idx(ring, partition_hash):
-        return bisect_right(ring, Node(partition_hash))
+        idx = bisect_right(ring, Node(partition_hash))
+        # If idx is 0, that means the current hash is smaller than the hash of the
+        # node at index 0 therefore we need to grab the last node of the ring
+        # (cicle to the back)
+        return idx - 1 if idx > 0 else len(ring) - 1
 
     def print_ring(self):
         print(" | ".join(["{} ({})".format(n.data, n.start) for n in self.ring]))
