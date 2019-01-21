@@ -1,3 +1,8 @@
+"""
+  TODOs
+    1 - 
+"""
+
 from phoenix.lists import DoubleLinkedList
 
 
@@ -118,7 +123,7 @@ class LRUCache(object):
         self.store.print()
 
 
-class CacheNode:
+class LFUCacheNode:
     def __init__(self, key, val, freq_node):
         self.key = key
         self.val = val
@@ -130,10 +135,10 @@ class CacheNode:
         return "({}, {})".format(self.key, self.val)
 
 
-class FrequencyNode:
+class LFUFrequencyNode:
     def __init__(self, f):
         self.f = f
-        self.c_list = DoubleLinkedList(lambda k, v: CacheNode(None, None, None))
+        self.c_list = DoubleLinkedList(lambda k, v: LFUCacheNode(None, None, None))
         self.next = None
         self.prev = None
 
@@ -145,7 +150,7 @@ class LFUCache:
     def __init__(self, cap):
         self.cap = cap
         self.cache_map = {}
-        self.f_list = DoubleLinkedList(lambda k, v: FrequencyNode(v))
+        self.f_list = DoubleLinkedList(lambda k, v: LFUFrequencyNode(v))
 
     def put(self, key, val):
         if self.cap == 0:
@@ -165,9 +170,9 @@ class LFUCache:
         return cnode.val
 
     def _evict_lfu(self):
-        fnode = self.f_list.true_head()
+        fnode = self.f_list.head()
 
-        k, v = fnode.c_list.popleft()
+        k, v = fnode.c_list.pop_left()
         del self.cache_map[k]
 
         if self.f_list.size == 0:
@@ -199,23 +204,23 @@ class LFUCache:
                 fnode = fnext
             else:
                 # We need to create a new frequency node as new_f is not represented
-                fnode = self.f_list.appendbefore(FrequencyNode(new_f), fnext)
+                fnode = self.f_list.appendbefore(LFUFrequencyNode(new_f), fnext)
 
             # Add the cache node to its frequency node
             cnode.freq_node = fnode
             fnode.c_list.append(cnode)
         else:
             # If it is brand new key, its frequency must be 1.
-            if self.f_list.true_head().f == 1:
+            if self.f_list.head().f == 1:
                 # 1 is already on the frequency list (If so, it must be the head)
-                fnode = self.f_list.true_head()
+                fnode = self.f_list.head()
             else:
                 # Create the new frequency node
-                fnode = FrequencyNode(1)
-                self.f_list.appendleft(fnode)
+                fnode = LFUFrequencyNode(1)
+                self.f_list.append_left(fnode)
 
             # Connect the cache and frequency nodes and add the key to cache
-            cnode = CacheNode(key, val, fnode)
+            cnode = LFUCacheNode(key, val, fnode)
             fnode.c_list.append(cnode)
             self.cache_map[key] = cnode
 
@@ -223,7 +228,7 @@ class LFUCache:
         print([k for k, v in self.cache_map.items()])
 
         buf = ""
-        node = self.f_list.true_head()
+        node = self.f_list.head()
         while node != self.f_list.tail:
             print("Freq:", node.f)
             node.c_list.print_f()
