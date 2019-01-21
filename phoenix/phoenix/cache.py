@@ -1,4 +1,4 @@
-from phoenix.lists import DoubleLinkedList, SentinelNode
+from phoenix.lists import SentinelDoublyList, is_sentinel
 
 
 class Node(object):
@@ -133,7 +133,7 @@ class LFUCacheNode:
 class LFUFrequencyNode:
     def __init__(self, f):
         self.f = f
-        self.c_list = DoubleLinkedList(lambda k, v: LFUCacheNode(None, None, None))
+        self.c_list = SentinelDoublyList()
         self.next = None
         self.prev = None
 
@@ -145,7 +145,7 @@ class LFUCache:
     def __init__(self, cap):
         self.cap = cap
         self.cache_map = {}
-        self.f_list = DoubleLinkedList(lambda k, v: LFUFrequencyNode(v))
+        self.f_list = SentinelDoublyList()
 
     def put(self, key, val):
         if self.cap == 0:
@@ -194,12 +194,12 @@ class LFUCache:
                 # If there are no more nodes left, remove the frequency node
                 self.f_list.unlink(fnode)
 
-            if not isinstance(fnext, SentinelNode) and new_f == fnext.f:
+            if not is_sentinel(fnext) and new_f == fnext.f:
                 # The next frequency node is responsible for the new frequency so use it
                 fnode = fnext
             else:
                 # We need to create a new frequency node as new_f is not represented
-                fnode = self.f_list.appendbefore(LFUFrequencyNode(new_f), fnext)
+                fnode = self.f_list.append_before(LFUFrequencyNode(new_f), fnext)
 
             # Add the cache node to its frequency node
             cnode.freq_node = fnode
@@ -207,7 +207,7 @@ class LFUCache:
         else:
             # If it is brand new key, its frequency must be 1.
             head = self.f_list.head()
-            if not isinstance(head, SentinelNode) and head.f == 1:
+            if not is_sentinel(head) and head.f == 1:
                 # 1 is already on the frequency list (If so, it must be the head)
                 fnode = self.f_list.head()
             else:

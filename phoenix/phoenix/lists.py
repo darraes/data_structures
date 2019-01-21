@@ -1,13 +1,26 @@
-# TODO: Need to generalize
-
 class SentinelNode(object):
     def __init__(self):
         self.next = None
         self.prev = None
 
-class DoubleLinkedList:
-    def __init__(self, node_builder):
-        self.builder = node_builder
+
+def is_sentinel(n):
+    return isinstance(n, SentinelNode)
+
+
+def is_valid(n):
+    return not is_sentinel(n)
+
+
+class SentinelDoublyList:
+    """ Doubly linked list that can manage any node as long as nodes have a @next 
+        and a @prev member representing the next and the previous node respectively.
+
+        The end of the list in both tail.next or head.prev is represented by a Sentinel
+        Node, not by None.
+    """
+
+    def __init__(self):
         self.__head = SentinelNode()
         self.__tail = SentinelNode()
         self.__head.next = self.__tail
@@ -44,7 +57,7 @@ class DoubleLinkedList:
         self.size += 1
         return n
 
-    def appendbefore(self, n, next):
+    def append_before(self, n, next):
         prev = next.prev
 
         prev.next = n
