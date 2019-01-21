@@ -1,9 +1,4 @@
-"""
-  TODOs
-    1 - 
-"""
-
-from phoenix.lists import DoubleLinkedList
+from phoenix.lists import DoubleLinkedList, SentinelNode
 
 
 class Node(object):
@@ -199,7 +194,7 @@ class LFUCache:
                 # If there are no more nodes left, remove the frequency node
                 self.f_list.unlink(fnode)
 
-            if new_f == fnext.f:
+            if not isinstance(fnext, SentinelNode) and new_f == fnext.f:
                 # The next frequency node is responsible for the new frequency so use it
                 fnode = fnext
             else:
@@ -211,7 +206,8 @@ class LFUCache:
             fnode.c_list.append(cnode)
         else:
             # If it is brand new key, its frequency must be 1.
-            if self.f_list.head().f == 1:
+            head = self.f_list.head()
+            if not isinstance(head, SentinelNode) and head.f == 1:
                 # 1 is already on the frequency list (If so, it must be the head)
                 fnode = self.f_list.head()
             else:

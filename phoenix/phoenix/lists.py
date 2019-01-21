@@ -1,10 +1,15 @@
 # TODO: Need to generalize
 
+class SentinelNode(object):
+    def __init__(self):
+        self.next = None
+        self.prev = None
+
 class DoubleLinkedList:
     def __init__(self, node_builder):
         self.builder = node_builder
-        self.__head = self.builder(None, None)
-        self.__tail = self.builder(None, None)
+        self.__head = SentinelNode()
+        self.__tail = SentinelNode()
         self.__head.next = self.__tail
         self.__tail.prev = self.__head
         self.size = 0

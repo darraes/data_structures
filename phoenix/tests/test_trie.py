@@ -17,7 +17,7 @@ class TestFunctions(unittest.TestCase):
         trie.insert("facing")
         trie.insert("factory")
 
-        trie.print_trie()
+        # trie.print_trie()
 
         self.assertTrue(trie.search("there"))
         self.assertTrue(trie.search("face"))
