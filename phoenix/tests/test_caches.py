@@ -90,26 +90,3 @@ class TestFunctions(unittest.TestCase):
         cache.put("k2", "v2")
         cache.put("k6", "v6")
         cache.put("k3", "v3")
-
-    def btest_lfu_1(self):
-        print("==============")
-        l = DoubleLinkedList(lambda k, v: CacheNode(None, None, None))
-
-        l.append(CacheNode(1, 1, None))
-        n3 = l.append(CacheNode(3, 3, None))
-        l.append(CacheNode(4, 4, None))
-        l.appendleft(CacheNode(0, 0, None))
-        l.appendbefore(CacheNode(2, 2, None), n3)
-
-        self.assertEqual("F:(0, 0)->(1, 1)->(2, 2)->(3, 3)->(4, 4)->", l.print_f())
-        self.assertEqual("B:(4, 4)->(3, 3)->(2, 2)->(1, 1)->(0, 0)->", l.print_b())
-
-        l.unlink(n3)
-        self.assertEqual("F:(0, 0)->(1, 1)->(2, 2)->(4, 4)->", l.print_f())
-        self.assertEqual("B:(4, 4)->(2, 2)->(1, 1)->(0, 0)->", l.print_b())
-
-        l.pop()
-        l.popleft()
-
-        self.assertEqual("F:(1, 1)->(2, 2)->", l.print_f())
-        self.assertEqual("B:(2, 2)->(1, 1)->", l.print_b())

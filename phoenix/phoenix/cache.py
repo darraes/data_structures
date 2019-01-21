@@ -1,4 +1,4 @@
-from phoenix.lists import SentinelDoublyList, is_sentinel
+from phoenix.lists import SentinelDoublyList
 
 
 class Node(object):
@@ -118,65 +118,57 @@ class LRUCache(object):
         self.store.print()
 
 
-class LFUCacheNode:
-    def __init__(self, key, val, freq_node):
-        self.key = key
-        self.val = val
-        self.freq_node = freq_node
-        self.next = None
-        self.prev = None
-
-    def __str__(self):
-        return "({}, {})".format(self.key, self.val)
-
-
-class LFUFrequencyNode:
-    def __init__(self, f):
-        self.f = f
-        self.c_list = SentinelDoublyList()
-        self.next = None
-        self.prev = None
-
-    def __str__(self):
-        return "({})".format(self.f)
-
-
 class LFUCache:
-    def __init__(self, cap):
-        self.cap = cap
-        self.cache_map = {}
-        self.f_list = SentinelDoublyList()
+    class CacheNode:
+        def __init__(self, key, val, freq_node):
+            self.key = key
+            self.val = val
+            self.freq_node = freq_node
+            self.next = None
+            self.prev = None
+
+    class FrequencyNode:
+        def __init__(self, f):
+            self.f = f
+            self.c_list = SentinelDoublyList()
+            self.next = None
+            self.prev = None
+
+    def __init__(self, capacity):
+        self._capacity = capacity
+        self._cache_map = {}
+        self._freq_list = SentinelDoublyList()
 
     def put(self, key, val):
-        if self.cap == 0:
+        if self._capacity == 0:
             return
 
-        if len(self.cache_map) == self.cap and key not in self.cache_map:
+        if len(self._cache_map) == self._capacity and key not in self._cache_map:
             self._evict_lfu()
 
         self._update(key, val)
 
     def get(self, key):
-        if key not in self.cache_map:
+        if key not in self._cache_map:
             return -1
 
-        cnode = self.cache_map[key]
+        cnode = self._cache_map[key]
         self._update(key, cnode.val)
         return cnode.val
 
     def _evict_lfu(self):
-        fnode = self.f_list.head()
+        fnode = self._freq_list.head()
 
         k, v = fnode.c_list.pop_left()
-        del self.cache_map[k]
+        del self._cache_map[k]
 
-        if self.f_list.size() == 0:
-            self.f_list.unlink(fnode)
+        if self._freq_list.size() == 0:
+            self._freq_list.unlink(fnode)
 
     def _update(self, key, val):
-        if key in self.cache_map:
+        if key in self._cache_map:
             # Update the cache value
-            cnode = self.cache_map[key]
+            cnode = self._cache_map[key]
             cnode.val = val
 
             # We need the frequency node to unlink the cache node and move the latter
@@ -192,40 +184,32 @@ class LFUCache:
             fnode.c_list.unlink(cnode)
             if fnode.c_list.size() == 0:
                 # If there are no more nodes left, remove the frequency node
-                self.f_list.unlink(fnode)
+                self._freq_list.unlink(fnode)
 
-            if not is_sentinel(fnext) and new_f == fnext.f:
+            if not SentinelDoublyList.is_sentinel(fnext) and new_f == fnext.f:
                 # The next frequency node is responsible for the new frequency so use it
                 fnode = fnext
             else:
                 # We need to create a new frequency node as new_f is not represented
-                fnode = self.f_list.append_before(LFUFrequencyNode(new_f), fnext)
+                fnode = self._freq_list.append_before(
+                    LFUCache.FrequencyNode(new_f), fnext
+                )
 
             # Add the cache node to its frequency node
             cnode.freq_node = fnode
             fnode.c_list.append(cnode)
         else:
             # If it is brand new key, its frequency must be 1.
-            head = self.f_list.head()
-            if not is_sentinel(head) and head.f == 1:
+            head = self._freq_list.head()
+            if not SentinelDoublyList.is_sentinel(head) and head.f == 1:
                 # 1 is already on the frequency list (If so, it must be the head)
-                fnode = self.f_list.head()
+                fnode = self._freq_list.head()
             else:
                 # Create the new frequency node
-                fnode = LFUFrequencyNode(1)
-                self.f_list.append_left(fnode)
+                fnode = LFUCache.FrequencyNode(1)
+                self._freq_list.append_left(fnode)
 
             # Connect the cache and frequency nodes and add the key to cache
-            cnode = LFUCacheNode(key, val, fnode)
+            cnode = LFUCache.CacheNode(key, val, fnode)
             fnode.c_list.append(cnode)
-            self.cache_map[key] = cnode
-
-    def print_cache(self):
-        print([k for k, v in self.cache_map.items()])
-
-        buf = ""
-        node = self.f_list.head()
-        while node != self.f_list.tail:
-            print("Freq:", node.f)
-            node.c_list.print_f()
-            node = node.next
+            self._cache_map[key] = cnode

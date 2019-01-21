@@ -1,31 +1,27 @@
-class SentinelNode(object):
-    def __init__(self):
-        self.next = None
-        self.prev = None
-
-
-def is_sentinel(n):
-    return isinstance(n, SentinelNode)
-
-
-def is_valid(n):
-    return not is_sentinel(n)
-
-
 class SentinelDoublyList:
-    """ Doubly linked list that can manage any node as long as nodes have a @next 
-        and a @prev member representing the next and the previous node respectively.
+    """ 
+    Doubly linked list that can manage any node as long as nodes have a @next 
+    and a @prev member representing the next and the previous node respectively.
 
-        The end of the list in both tail.next or head.prev is represented by a Sentinel
-        Node, not by None.
+    The end of the list in both tail.next or head.prev is represented by a Sentinel
+    Node, not by None. A helper static method is_sentinel(n) is provided
     """
 
+    class SentinelNode(object):
+        def __init__(self):
+            self.next = None
+            self.prev = None
+
     def __init__(self):
-        self._head = SentinelNode()
-        self._tail = SentinelNode()
+        self._head = SentinelDoublyList.SentinelNode()
+        self._tail = SentinelDoublyList.SentinelNode()
         self._head.next = self._tail
         self._tail.prev = self._head
         self._size = 0
+
+    @staticmethod
+    def is_sentinel(n):
+        return isinstance(n, SentinelDoublyList.SentinelNode)
 
     def head(self):
         return self._head.next
@@ -36,7 +32,13 @@ class SentinelDoublyList:
     def size(self):
         return self._size
 
+    def is_empty(self):
+        return self._size == 0
+
     def append(self, n):
+        if SentinelDoublyList.is_sentinel(n):
+            raise "TODO Create Exception"
+
         ptail = self._tail.prev
 
         ptail.next = n
@@ -49,6 +51,9 @@ class SentinelDoublyList:
         return n
 
     def append_left(self, n):
+        if SentinelDoublyList.is_sentinel(n):
+            raise "TODO Create Exception"
+
         phead = self._head.next
 
         self._head.next = n
@@ -60,52 +65,40 @@ class SentinelDoublyList:
         self._size += 1
         return n
 
-    def append_before(self, n, next):
-        prev = next.prev
+    def append_before(self, n, that):
+        if SentinelDoublyList.is_sentinel(n):
+            raise "TODO Create Exception"
+
+        prev = that.prev
 
         prev.next = n
         n.prev = prev
 
-        n.next = next
-        next.prev = n
+        n.next = that
+        that.prev = n
 
         self._size += 1
         return n
 
     def pop(self):
+        if self.is_empty():
+            raise "TODO Create Exception"
+
         n = self.unlink(self._tail.prev)
         return (n.key, n.val)
 
     def pop_left(self):
+        if self.is_empty():
+            raise "TODO Create Exception"
+
         n = self.unlink(self._head.next)
         return (n.key, n.val)
 
-    def unlink(self, node):
-        node.prev.next = node.next
-        node.next.prev = node.prev
+    def unlink(self, n):
+        if SentinelDoublyList.is_sentinel(n):
+            raise "TODO Create Exception"
+
+        n.prev.next = n.next
+        n.next.prev = n.prev
         self._size -= 1
-        return node
-
-    def print(self):
-        self.print_f()
-        self.print_b()
-
-    def print_f(self):
-        res = ""
-
-        buf = ""
-        node = self.head()
-        while node != self._tail:
-            buf += str(node) + "->"
-            node = node.next
-        print("F:", buf)
-        return "F:" + buf
-
-    def print_b(self):
-        buf = ""
-        node = self.tail()
-        while node != self._head:
-            buf += str(node) + "->"
-            node = node.prev
-        print("B:", buf)
-        return "B:" + buf
+        return n
