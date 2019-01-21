@@ -1,3 +1,5 @@
+# TODO: Need to generalize
+
 class DoubleLinkedList:
     def __init__(self, node_builder):
         self.builder = node_builder
