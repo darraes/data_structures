@@ -1,9 +1,8 @@
-import unittest
-
+from unittest import TestCase
 from phoenix.hash_ring import *
 
 
-class TestFunctions(unittest.TestCase):
+class TestFunctions(TestCase):
     def test_insert_on_middle(self):
         vertexes = [200000000, 500000000, 800000000]
         idx = -1

@@ -1,4 +1,122 @@
-from lists import DoubleLinkedList
+from phoenix.lists import DoubleLinkedList
+
+
+class Node(object):
+    def __init__(self, key, val):
+        self.key = key
+        self.val = val
+        self.next = None
+        self.prev = None
+
+    def __str__(self):
+        return "({},{})".format(self.key, self.val)
+
+
+class SimpleLinkedList(object):
+    def __init__(self, capacity):
+        self.size = 0
+        self.capacity = capacity
+        self.head = None
+        self.tail = None
+
+    def add_as_head(self, n):
+        self.size += 1
+        self._add_as_head(n)
+
+    def evict_last_if_full(self):
+        if self.size == self.capacity:
+            self.size -= 1
+            return self._retreat_tail()
+
+    def move_to_head(self, n):
+        if n.key == self.head.key:
+            return
+
+        my_prev = n.prev
+        my_next = n.next
+
+        if my_prev:
+            my_prev.next = my_next
+        if my_next:
+            my_next.prev = my_prev
+
+        if n.key == self.tail.key:
+            self._retreat_tail()
+
+        self._add_as_head(n)
+
+    def _retreat_tail(self):
+        old_tail = None
+        if self.tail:
+            old_tail = self.tail
+            new_tail = self.tail.prev
+            old_tail.prev = None
+            if new_tail:
+                new_tail.next = None
+            self.tail = new_tail
+        return old_tail
+
+    def _add_as_head(self, n):
+        n.next = self.head
+        n.prev = None
+
+        if self.head:
+            self.head.prev = n
+
+        self.head = n
+
+        if not self.tail:
+            self.tail = self.head
+
+    def print(self):
+        buffer = ""
+        node = self.head
+        while node:
+            buffer += str(node.key)
+            buffer += " -> "
+            node = node.next
+        print(buffer)
+
+        buffer = ""
+        node = self.tail
+        while node:
+            buffer += str(node.key)
+            buffer += " -> "
+            node = node.prev
+        print(buffer)
+
+
+class LRUCache(object):
+    def __init__(self, capacity):
+        self.store = SimpleLinkedList(capacity)
+        self.lookup = {}
+
+    def put(self, key, val):
+        if key not in self.lookup:
+            n_removed = self.store.evict_last_if_full()
+            if n_removed:
+                del self.lookup[n_removed.key]
+
+            n = Node(key, val)
+            self.store.add_as_head(n)
+            self.lookup[key] = n
+        else:
+            n = self.lookup[key]
+            n.val = val
+            self.store.move_to_head(n)
+
+    def get(self, key):
+        if key in self.lookup:
+            n = self.lookup[key]
+            self.store.move_to_head(n)
+            return n.val
+
+        return -1
+
+    def print(self):
+        print([k for k, v in self.lookup.items()])
+        self.store.print()
+
 
 class CacheNode:
     def __init__(self, key, val, freq_node):
@@ -48,7 +166,7 @@ class LFUCache:
 
     def _evict_lfu(self):
         fnode = self.f_list.true_head()
-        
+
         k, v = fnode.c_list.popleft()
         del self.cache_map[k]
 
@@ -110,71 +228,3 @@ class LFUCache:
             print("Freq:", node.f)
             node.c_list.print_f()
             node = node.next
-
-
-###############################################################
-import unittest
-
-
-class TestFunctions(unittest.TestCase):
-    def test_4(self):
-        cache = LFUCache(0)
-
-        cache.put(0, 0)
-        self.assertEqual(-1, cache.get(0))
-
-    def test_3(self):
-        cache = LFUCache(2)
-
-        cache.put(1, 1)
-        cache.put(2, 2)
-        self.assertEqual(1, cache.get(1))
-
-        cache.put(3, 3)
-        self.assertEqual(-1, cache.get(2))
-        self.assertEqual(3, cache.get(3))
-
-        cache.put(4, 4)
-        self.assertEqual(-1, cache.get(1))
-        self.assertEqual(3, cache.get(3))
-        self.assertEqual(4, cache.get(4))
-
-    def test_2(self):
-        cache = LFUCache(5)
-        cache.put("k1", "v1")
-        cache.put("k2", "v2")
-        cache.put("k3", "v3")
-        cache.put("k4", "v4")
-        cache.put("k5", "v5")
-        cache.put("k2", "v2")
-        cache.put("k3", "v3")
-        cache.put("k2", "v2")
-        cache.put("k6", "v6")
-        cache.put("k3", "v3")
-
-    def btest_1(self):
-        print("==============")
-        l = DoubleLinkedList(lambda k, v: CacheNode(None, None, None))
-
-        l.append(CacheNode(1, 1, None))
-        n3 = l.append(CacheNode(3, 3, None))
-        l.append(CacheNode(4, 4, None))
-        l.appendleft(CacheNode(0, 0, None))
-        l.appendbefore(CacheNode(2, 2, None), n3)
-
-        self.assertEqual("F:(0, 0)->(1, 1)->(2, 2)->(3, 3)->(4, 4)->", l.print_f())
-        self.assertEqual("B:(4, 4)->(3, 3)->(2, 2)->(1, 1)->(0, 0)->", l.print_b())
-
-        l.unlink(n3)
-        self.assertEqual("F:(0, 0)->(1, 1)->(2, 2)->(4, 4)->", l.print_f())
-        self.assertEqual("B:(4, 4)->(2, 2)->(1, 1)->(0, 0)->", l.print_b())
-
-        l.pop()
-        l.popleft()
-
-        self.assertEqual("F:(1, 1)->(2, 2)->", l.print_f())
-        self.assertEqual("B:(2, 2)->(1, 1)->", l.print_b())
-
-
-if __name__ == "__main__":
-    unittest.main()

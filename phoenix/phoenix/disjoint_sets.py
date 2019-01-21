@@ -7,16 +7,16 @@ class DisjointSets:
             self.parent[i] = i
             self.counts[i] = 1
 
-    def representative(self, node):
+    def parent(self, node):
         if self.parent[node] == node:
             return node
 
-        self.parent[node] = self.representative(self.parent[node])
+        self.parent[node] = self.parent(self.parent[node])
         return self.parent[node]
 
     def union(self, v1, v2):
-        p1 = self.representative(v1)
-        p2 = self.representative(v2)
+        p1 = self.parent(v1)
+        p2 = self.parent(v2)
 
         if p1 == p2:
             return
@@ -36,4 +36,4 @@ class DisjointSets:
             self.counts[p1] += self.counts[p2]
 
     def size(self, v):
-        return self.counts[self.representative(v)]
+        return self.counts[self.parent(v)]
