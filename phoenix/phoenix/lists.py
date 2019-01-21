@@ -21,40 +21,43 @@ class SentinelDoublyList:
     """
 
     def __init__(self):
-        self.__head = SentinelNode()
-        self.__tail = SentinelNode()
-        self.__head.next = self.__tail
-        self.__tail.prev = self.__head
-        self.size = 0
+        self._head = SentinelNode()
+        self._tail = SentinelNode()
+        self._head.next = self._tail
+        self._tail.prev = self._head
+        self._size = 0
 
     def head(self):
-        return self.__head.next
+        return self._head.next
 
     def tail(self):
-        return self.__tail.prev
+        return self._tail.prev
+
+    def size(self):
+        return self._size
 
     def append(self, n):
-        ptail = self.__tail.prev
+        ptail = self._tail.prev
 
         ptail.next = n
         n.prev = ptail
 
-        n.next = self.__tail
-        self.__tail.prev = n
+        n.next = self._tail
+        self._tail.prev = n
 
-        self.size += 1
+        self._size += 1
         return n
 
     def append_left(self, n):
-        phead = self.__head.next
+        phead = self._head.next
 
-        self.__head.next = n
-        n.prev = self.__head
+        self._head.next = n
+        n.prev = self._head
 
         n.next = phead
         phead.prev = n
 
-        self.size += 1
+        self._size += 1
         return n
 
     def append_before(self, n, next):
@@ -66,21 +69,21 @@ class SentinelDoublyList:
         n.next = next
         next.prev = n
 
-        self.size += 1
+        self._size += 1
         return n
 
     def pop(self):
-        n = self.unlink(self.__tail.prev)
+        n = self.unlink(self._tail.prev)
         return (n.key, n.val)
 
     def pop_left(self):
-        n = self.unlink(self.__head.next)
+        n = self.unlink(self._head.next)
         return (n.key, n.val)
 
     def unlink(self, node):
         node.prev.next = node.next
         node.next.prev = node.prev
-        self.size -= 1
+        self._size -= 1
         return node
 
     def print(self):
@@ -92,7 +95,7 @@ class SentinelDoublyList:
 
         buf = ""
         node = self.head()
-        while node != self.__tail:
+        while node != self._tail:
             buf += str(node) + "->"
             node = node.next
         print("F:", buf)
@@ -101,7 +104,7 @@ class SentinelDoublyList:
     def print_b(self):
         buf = ""
         node = self.tail()
-        while node != self.__head:
+        while node != self._head:
             buf += str(node) + "->"
             node = node.prev
         print("B:", buf)

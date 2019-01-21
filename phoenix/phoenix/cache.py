@@ -170,7 +170,7 @@ class LFUCache:
         k, v = fnode.c_list.pop_left()
         del self.cache_map[k]
 
-        if self.f_list.size == 0:
+        if self.f_list.size() == 0:
             self.f_list.unlink(fnode)
 
     def _update(self, key, val):
@@ -190,7 +190,7 @@ class LFUCache:
 
             # Unlink the cache node from previous frequency
             fnode.c_list.unlink(cnode)
-            if fnode.c_list.size == 0:
+            if fnode.c_list.size() == 0:
                 # If there are no more nodes left, remove the frequency node
                 self.f_list.unlink(fnode)
 

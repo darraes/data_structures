@@ -1,5 +1,3 @@
-# TODO: proper test cases
-
 import unittest
 from phoenix.cache import *
 
