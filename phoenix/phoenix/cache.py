@@ -1,120 +1,54 @@
 from phoenix.lists import SentinelDoublyList
 
 
-class Node(object):
-    def __init__(self, key, val):
-        self.key = key
-        self.val = val
-        self.next = None
-        self.prev = None
-
-    def __str__(self):
-        return "({},{})".format(self.key, self.val)
-
-
-class SimpleLinkedList(object):
-    def __init__(self, capacity):
-        self.size = 0
-        self.capacity = capacity
-        self.head = None
-        self.tail = None
-
-    def add_as_head(self, n):
-        self.size += 1
-        self._add_as_head(n)
-
-    def evict_last_if_full(self):
-        if self.size == self.capacity:
-            self.size -= 1
-            return self._retreat_tail()
-
-    def move_to_head(self, n):
-        if n.key == self.head.key:
-            return
-
-        my_prev = n.prev
-        my_next = n.next
-
-        if my_prev:
-            my_prev.next = my_next
-        if my_next:
-            my_next.prev = my_prev
-
-        if n.key == self.tail.key:
-            self._retreat_tail()
-
-        self._add_as_head(n)
-
-    def _retreat_tail(self):
-        old_tail = None
-        if self.tail:
-            old_tail = self.tail
-            new_tail = self.tail.prev
-            old_tail.prev = None
-            if new_tail:
-                new_tail.next = None
-            self.tail = new_tail
-        return old_tail
-
-    def _add_as_head(self, n):
-        n.next = self.head
-        n.prev = None
-
-        if self.head:
-            self.head.prev = n
-
-        self.head = n
-
-        if not self.tail:
-            self.tail = self.head
-
-    def print(self):
-        buffer = ""
-        node = self.head
-        while node:
-            buffer += str(node.key)
-            buffer += " -> "
-            node = node.next
-        print(buffer)
-
-        buffer = ""
-        node = self.tail
-        while node:
-            buffer += str(node.key)
-            buffer += " -> "
-            node = node.prev
-        print(buffer)
-
-
 class LRUCache(object):
+    class CacheNode(object):
+        def __init__(self, key, val):
+            self.key = key
+            self.val = val
+            self.next = None
+            self.prev = None
+
     def __init__(self, capacity):
-        self.store = SimpleLinkedList(capacity)
-        self.lookup = {}
+        self._cache_list = SentinelDoublyList()
+        self._lookup = {}
+        self.capacity = capacity
+
+    @property
+    def capacity(self):
+        return self._capacity
+
+    @capacity.setter
+    def capacity(self, c):
+        self._capacity = c
 
     def put(self, key, val):
-        if key not in self.lookup:
-            n_removed = self.store.evict_last_if_full()
-            if n_removed:
-                del self.lookup[n_removed.key]
+        if key not in self._lookup:
+            if self.capacity == self._cache_list.size():
+                tail = self._cache_list.tail()
+                self._cache_list.unlink(tail)
+                del self._lookup[tail.key]
 
-            n = Node(key, val)
-            self.store.add_as_head(n)
-            self.lookup[key] = n
+            n = LRUCache.CacheNode(key, val)
+            self._cache_list.append_left(n)
+            self._lookup[key] = n
         else:
-            n = self.lookup[key]
+            n = self._lookup[key]
             n.val = val
-            self.store.move_to_head(n)
+            self._cache_list.unlink(n)
+            self._cache_list.append_left(n)
 
     def get(self, key):
-        if key in self.lookup:
-            n = self.lookup[key]
-            self.store.move_to_head(n)
+        if key in self._lookup:
+            n = self._lookup[key]
+            self._cache_list.unlink(n)
+            self._cache_list.append_left(n)
             return n.val
 
         return -1
 
     def print(self):
-        print([k for k, v in self.lookup.items()])
+        print([k for k, v in self._lookup.items()])
         self.store.print()
 
 
@@ -178,7 +112,7 @@ class LFUCache:
             # Frequency gets bump by one and the "next" node might or might not be
             # the node for the new frequency
             new_f = fnode.f + 1
-            fnext = fnode.next
+            fnext = self._freq_list.next(fnode)
 
             # Unlink the cache node from previous frequency
             fnode.c_list.unlink(cnode)
@@ -186,14 +120,17 @@ class LFUCache:
                 # If there are no more nodes left, remove the frequency node
                 self._freq_list.unlink(fnode)
 
-            if not SentinelDoublyList.is_sentinel(fnext) and new_f == fnext.f:
+            if fnext and new_f == fnext.f:
                 # The next frequency node is responsible for the new frequency so use it
                 fnode = fnext
             else:
                 # We need to create a new frequency node as new_f is not represented
-                fnode = self._freq_list.append_before(
-                    LFUCache.FrequencyNode(new_f), fnext
-                )
+                if fnext:
+                    fnode = self._freq_list.append_before(
+                        LFUCache.FrequencyNode(new_f), fnext
+                    )
+                else:
+                    fnode = self._freq_list.append(LFUCache.FrequencyNode(new_f))
 
             # Add the cache node to its frequency node
             cnode.freq_node = fnode
@@ -201,7 +138,7 @@ class LFUCache:
         else:
             # If it is brand new key, its frequency must be 1.
             head = self._freq_list.head()
-            if not SentinelDoublyList.is_sentinel(head) and head.f == 1:
+            if head and head.f == 1:
                 # 1 is already on the frequency list (If so, it must be the head)
                 fnode = self._freq_list.head()
             else:

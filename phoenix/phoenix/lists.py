@@ -24,10 +24,24 @@ class SentinelDoublyList:
         return isinstance(n, SentinelDoublyList.SentinelNode)
 
     def head(self):
-        return self._head.next
+        return (
+            self._head.next
+            if not SentinelDoublyList.is_sentinel(self._head.next)
+            else None
+        )
 
     def tail(self):
-        return self._tail.prev
+        return (
+            self._tail.prev
+            if not SentinelDoublyList.is_sentinel(self._tail.prev)
+            else None
+        )
+
+    def next(self, n):
+        return n.next if not SentinelDoublyList.is_sentinel(n.next) else None
+
+    def prev(self, n):
+        return n.prev if not SentinelDoublyList.is_sentinel(n.prev) else None
 
     def size(self):
         return self._size
