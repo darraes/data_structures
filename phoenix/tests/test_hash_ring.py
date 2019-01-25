@@ -9,13 +9,13 @@ class TestFunctions(TestCase):
         vertexes = [200000000, 500000000, 800000000]
         idx = -1
 
-        def generator():
+        def hash_generator():
             nonlocal vertexes, idx
             idx += 1
             return vertexes[idx]
 
         ring = HashRing(spreading_factor=3)
-        ring.add("shard_0", generator=generator)
+        ring.add("shard_0", hash_generator=hash_generator)
         ring.spreading_factor = 1
 
         self.assertEqual("shard_0", HashRing._find_partition(ring._ring, 0).data)
@@ -47,7 +47,7 @@ class TestFunctions(TestCase):
             "shard_0", HashRing._find_partition(ring._ring, 900000000).data
         )
 
-        moves = ring.add("shard_1", generator=lambda: 300000000)
+        moves = ring.add("shard_1", hash_generator=lambda: 300000000)
 
         self.assertEqual(
             [
@@ -89,7 +89,7 @@ class TestFunctions(TestCase):
             "shard_0", HashRing._find_partition(ring._ring, 900000000).data
         )
 
-        moves = ring.add("shard_1", generator=lambda: 600000000)
+        moves = ring.add("shard_1", hash_generator=lambda: 600000000)
         self.assertEqual(
             [
                 ReshardUnit(
@@ -132,7 +132,7 @@ class TestFunctions(TestCase):
 
     def test_insert_new_last(self):
         ring = HashRing()
-        ring.add("shard_0", generator=lambda: 200000000)
+        ring.add("shard_0", hash_generator=lambda: 200000000)
 
         self.assertEqual("shard_0", HashRing._find_partition(ring._ring, 0).data)
         self.assertEqual(
@@ -164,7 +164,7 @@ class TestFunctions(TestCase):
         )
 
         # Test for when the ring has a single node
-        moves = ring.add("shard_1", generator=lambda: 400000000)
+        moves = ring.add("shard_1", hash_generator=lambda: 400000000)
 
         self.assertEqual(
             [
@@ -207,7 +207,7 @@ class TestFunctions(TestCase):
         )
 
         # Test for when the ring has multiple node
-        moves = ring.add("shard_2", generator=lambda: 600000000)
+        moves = ring.add("shard_2", hash_generator=lambda: 600000000)
         self.assertEqual(
             [
                 ReshardUnit(
@@ -250,7 +250,7 @@ class TestFunctions(TestCase):
 
     def test_insert_on_idx_zero(self):
         ring = HashRing()
-        ring.add("shard_0", generator=lambda: 500000000)
+        ring.add("shard_0", hash_generator=lambda: 500000000)
 
         self.assertEqual("shard_0", HashRing._find_partition(ring._ring, 0).data)
         self.assertEqual(
@@ -282,7 +282,7 @@ class TestFunctions(TestCase):
         )
 
         # Test for when the ring has a single node
-        moves = ring.add("shard_1", generator=lambda: 200000000)
+        moves = ring.add("shard_1", hash_generator=lambda: 200000000)
         self.assertEqual(
             [
                 ReshardUnit(
@@ -324,7 +324,7 @@ class TestFunctions(TestCase):
         )
 
         # Test for when the ring has multiple nodes
-        moves = ring.add("shard_2", generator=lambda: 100000000)
+        moves = ring.add("shard_2", hash_generator=lambda: 100000000)
         self.assertEqual(
             [
                 ReshardUnit(

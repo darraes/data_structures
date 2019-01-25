@@ -1,22 +1,23 @@
 from random import randint
 from bisect import bisect_right
 from collections import namedtuple
+from phoenix.utils import merge_sorted
 
 Range = namedtuple("Range", ["start", "count"])
 
 
 class Node(object):
     def __init__(self, start, data=None):
-        self.__start = start
-        self.__data = data
+        self._start = start
+        self._data = data
 
     @property
     def start(self):
-        return self.__start
+        return self._start
 
     @property
     def data(self):
-        return self.__data
+        return self._data
 
     def __str__(self):
         return "{} ({})".format(self.start, self.data)
@@ -56,35 +57,34 @@ class HashRing(object):
         self.spreading_factor = spreading_factor
         self._ring = []
 
-    def add(self, data, generator=lambda: randint(0, HashRing.RING_SIZE - 1)):
+    def add(self, data, hash_generator=lambda: randint(0, HashRing.RING_SIZE - 1)):
         """
         Adds @self.spreading_factor new nodes to the ring. All new nodes will point
         to @data.
 
-        :data: str         The data handing on the nodes being added. E.g. Shard name
-        :generator: int()  The function to generate the new nodes ring locations
-                           Must return a number in interval [0 - 1B)
+        :data: str              The data hanging on the nodes being added.
+        :hash_generator: int()  The function to generate the new nodes ring locations
+                                Must return a number in interval [0 - 1B)
         """
         moves = []
         new_nodes = []
         old_ring = [n for n in self._ring]
 
         for _ in range(self.spreading_factor):
-            # TODO: The generator can create a node with the same hash.
-            # If that happens, we should generate a new hash
-            node = Node(start=generator(), data=data)
+            node = Node(
+                start=self._create_node_hash(
+                    hash_generator, set([n.start for n in old_ring])
+                ),
+                data=data,
+            )
             new_nodes.append(node)
 
-        # TODO: We can potentially just sort the new_nodes and merge the lists for a
-        # better time complexity
-        self._ring.extend(new_nodes)
-        self._ring.sort()
+        new_nodes.sort()
+        self._ring = merge_sorted(self._ring, new_nodes)
 
         if len(old_ring) == 0:
             return moves
 
-        # TODO: For each new node, find where that data is on @old_ring and create the
-        # move
         for n in new_nodes:
             from_node = HashRing._find_partition(old_ring, n.start)
             start_node_idx = HashRing._find_partition_idx(self._ring, n.start)
@@ -105,7 +105,8 @@ class HashRing(object):
                     )
                 )
             else:
-                # We are looping on the ring therefore we need two ranges to be moved
+                # The new node is the last of the list therefore it has the loop where
+                # we need the ranges [start, Range.End] and [0, next_node.start)
                 moves.append(
                     ReshardUnit(
                         from_node=from_node,
@@ -126,6 +127,17 @@ class HashRing(object):
     def find(self, partition_key):
         partition_hash = hash(partition_key) % HashRing.RING_SIZE
         return HashRing._find_partition(self._ring, partition_hash).data
+
+    @staticmethod
+    def _create_node_hash(hash_generator, used_hashes):
+        """
+        We need to guarantee that two nodes don't have the exact same hash therefore we
+        loop until we create a unique new hash point
+        """
+        while True:
+            h = hash_generator()
+            if h not in used_hashes:
+                return h
 
     @staticmethod
     def _find_partition(ring, partition_hash):
