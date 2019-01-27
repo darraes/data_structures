@@ -1,9 +1,20 @@
+from abc import ABC
 from time import clock, sleep
 from threading import RLock, Thread
 from monitoring import log
 
 MS_IN_SEC = 0.001
 END_WORKFLOW = -1
+
+
+class Workflow(ABC):
+    @abstractmethod
+    def run_step(self):
+        return END_WORKFLOW
+
+    @abstractmethod
+    def on_stopping(self):
+        pass
 
 
 class WorkflowTask(object):

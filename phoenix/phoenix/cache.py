@@ -2,24 +2,49 @@ from phoenix.lists import SentinelDoublyList
 
 
 class LRUCache(object):
+    """
+    Straight forward O(1) get/put Last Recently Used cache.
+    This class is **NOT** Thread Safe
+    """
+
     class CacheNode(object):
+        """
+        Wrapper object that will hold both the user's key and value
+        """
         def __init__(self, key, val):
             self.key = key
             self.val = val
 
     def __init__(self, capacity):
+        # Uses SentinelDoublyList which is simply a doubly linked list that allows O(1)
+        # add / update / remove of any node.
+        # Honors the eviction of the last recently used which will always live in its
+        # tail
         self._cache_list = SentinelDoublyList()
+
+        # Hashtable for quick lookup of nodes
         self._lookup = {}
+
+        # Size of the cache. For now, no expanding or shrinking is allowed
         self._capacity = capacity
 
     @property
     def capacity(self):
+        """
+        Getter
+        """
         return self._capacity
 
     def put(self, key, val):
+        """
+        Puts the @key/@value in the cache. It will evict the oldest entry if the cache
+        is at capacity.
+        """
         if key not in self._lookup:
             if self._capacity == self._cache_list.size():
                 tail = self._cache_list.tail()
+
+                # Remove the tail (oldest) from the list and it's key from the lookup
                 self._cache_list.unlink(tail)
                 del self._lookup[tail.key]
 
@@ -29,20 +54,33 @@ class LRUCache(object):
         else:
             n = self._lookup[key]
             n.val = val
+
+            # Rotate node to the head of the list (newest)
             self._cache_list.unlink(n)
             self._cache_list.append_left(n)
 
     def get(self, key):
+        """
+        Gets the value associated with @key and bump that key to newest.
+        If key is not present, returns |None|
+        """
         if key in self._lookup:
             n = self._lookup[key]
+
+            # Rotate node to the head of the list (newest)
             self._cache_list.unlink(n)
             self._cache_list.append_left(n)
             return n.val
 
-        return -1
+        return None
 
 
 class LFUCache:
+    """
+    Straight forward O(1) get/put Last Frequently Used cache.
+    This class is **NOT** Thread Safe
+    """
+
     class CacheNode:
         def __init__(self, key, val, freq_node):
             self.key = key
@@ -64,19 +102,19 @@ class LFUCache:
             return
 
         if len(self._cache_map) == self._capacity and key not in self._cache_map:
-            self._evict_lfu()
+            self._evict()
 
         self._update(key, val)
 
     def get(self, key):
         if key not in self._cache_map:
-            return -1
+            return None
 
         cnode = self._cache_map[key]
         self._update(key, cnode.val)
         return cnode.val
 
-    def _evict_lfu(self):
+    def _evict(self):
         fnode = self._freq_list.head()
 
         k, v = fnode.c_list.pop_left()

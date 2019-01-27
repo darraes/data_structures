@@ -1,39 +1,41 @@
 class DisjointSets:
     def __init__(self, n):
-        self.counts = [-1] * n
-        self.parent = [-1] * n
-        self.rank = [1] * n
-        for i in range(len(self.parent)):
-            self.parent[i] = i
-            self.counts[i] = 1
+        self._counts = [-1] * n
+        self._parent = [-1] * n
+        self._rank = [1] * n
+        for i in range(len(self._parent)):
+            self._parent[i] = i
+            self._counts[i] = 1
 
-    def parent(self, node):
-        if self.parent[node] == node:
-            return node
+    def parent(self, n):
+        if self._parent[n] == n:
+            return n
 
-        self.parent[node] = self.parent(self.parent[node])
-        return self.parent[node]
+        # Path compression technique
+        self._parent[n] = self._parent(self._parent[n])
+        return self._parent[n]
 
-    def union(self, v1, v2):
-        p1 = self.parent(v1)
-        p2 = self.parent(v2)
+    def union(self, n1, n2):
+        p1 = self._parent(n1)
+        p2 = self._parent(n2)
 
         if p1 == p2:
             return
 
-        r1 = self.rank[p1]
-        r2 = self.rank[p2]
+        # Applying union by rank technique
+        r1 = self._rank[p1]
+        r2 = self._rank[p2]
 
         if r1 > r2:
-            self.parent[p2] = p1
-            self.counts[p1] += self.counts[p2]
+            self._parent[p2] = p1
+            self._counts[p1] += self._counts[p2]
         elif r2 > r1:
-            self.parent[p1] = p2
-            self.counts[p2] += self.counts[p1]
+            self._parent[p1] = p2
+            self._counts[p2] += self._counts[p1]
         else:
-            self.parent[p2] = p1
-            self.rank[p1] += 1
-            self.counts[p1] += self.counts[p2]
+            self._parent[p2] = p1
+            self._rank[p1] += 1
+            self._counts[p1] += self._counts[p2]
 
     def size(self, v):
-        return self.counts[self.parent(v)]
+        return self._counts[self._parent(v)]
