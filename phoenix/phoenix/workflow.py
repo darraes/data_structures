@@ -1,7 +1,7 @@
-from abc import ABC
-from time import clock, sleep
+from abc import ABC, abstractmethod
+from time import perf_counter, sleep
 from threading import RLock, Thread
-from monitoring import log
+from phoenix.monitoring import log
 
 MS_IN_SEC = 0.001
 END_WORKFLOW = -1
@@ -10,10 +10,17 @@ END_WORKFLOW = -1
 class Workflow(ABC):
     @abstractmethod
     def run_step(self):
+        """
+        Executes the next step and returns the minimal wait time, in fractional seconds,
+        the workflow engine should wait before calling back into the |run_step| method.
+        """
         return END_WORKFLOW
 
     @abstractmethod
-    def on_stopping(self):
+    def on_early_stop(self):
+        """
+        Called on the workflow objects when the engine is stopping before completion
+        """
         pass
 
 
@@ -35,7 +42,7 @@ class WorkflowWorker(object):
 
     def add_task(self, workflow, delay_secs=0.0):
         with self._lock:
-            self._idle_tasks.append(WorkflowTask(clock() + delay_secs, workflow))
+            self._idle_tasks.append(WorkflowTask(perf_counter() + delay_secs, workflow))
 
     def stop(self):
         self._stopping = True
@@ -44,11 +51,11 @@ class WorkflowWorker(object):
         while not self._stopping:
             worked = False
             for task in self._running_tasks:
-                if task.when >= 0 and task.when <= clock():
+                if task.when >= 0 and task.when <= perf_counter():
                     worked = True
                     task.when = task.workflow.run_step()
                     if task.when != END_WORKFLOW:
-                        task.when += clock()
+                        task.when += perf_counter()
 
             self._running_tasks = [
                 t for t in self._running_tasks if t.when != END_WORKFLOW
@@ -61,9 +68,9 @@ class WorkflowWorker(object):
             if not worked:
                 sleep(MS_IN_SEC)
 
-        log.info("Workflow worker stopped")
+        log.info("Workflow worker stopped early")
         for t in self._idle_tasks + self._running_tasks:
-            t.workflow.on_stopping()
+            t.workflow.on_early_stop()
 
 
 class WorkflowEngine(object):
@@ -75,7 +82,7 @@ class WorkflowEngine(object):
         for i in range(worker_count):
             self._workers.append(WorkflowWorker())
 
-    def add_workflow(self, workflow, delay_secs=0.0):
+    def add(self, workflow, delay_secs=0.0):
         with self._lock:
             self._workers[self._add_on].add_task(workflow, delay_secs)
             self._add_on = (self._add_on + 1) % self._worker_count
