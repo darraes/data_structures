@@ -6,8 +6,6 @@ class LRUCache(object):
         def __init__(self, key, val):
             self.key = key
             self.val = val
-            self.next = None
-            self.prev = None
 
     def __init__(self, capacity):
         self._cache_list = SentinelDoublyList()
@@ -50,15 +48,11 @@ class LFUCache:
             self.key = key
             self.val = val
             self.freq_node = freq_node
-            self.next = None
-            self.prev = None
 
     class FrequencyNode:
         def __init__(self, f):
             self.f = f
             self.c_list = SentinelDoublyList()
-            self.next = None
-            self.prev = None
 
     def __init__(self, capacity):
         self._capacity = capacity
@@ -89,7 +83,7 @@ class LFUCache:
         del self._cache_map[k]
 
         if self._freq_list.size() == 0:
-            self._freq_list.unlink(fnode)
+            self._freq_list.pop_left()
 
     def _update(self, key, val):
         if key in self._cache_map:
@@ -135,8 +129,7 @@ class LFUCache:
                 fnode = self._freq_list.head()
             else:
                 # Create the new frequency node
-                fnode = LFUCache.FrequencyNode(1)
-                self._freq_list.append_left(fnode)
+                fnode = self._freq_list.append_left(LFUCache.FrequencyNode(1))
 
             # Connect the cache and frequency nodes and add the key to cache
             cnode = LFUCache.CacheNode(key, val, fnode)
