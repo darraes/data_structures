@@ -12,19 +12,15 @@ class LRUCache(object):
     def __init__(self, capacity):
         self._cache_list = SentinelDoublyList()
         self._lookup = {}
-        self.capacity = capacity
+        self._capacity = capacity
 
     @property
     def capacity(self):
         return self._capacity
 
-    @capacity.setter
-    def capacity(self, c):
-        self._capacity = c
-
     def put(self, key, val):
         if key not in self._lookup:
-            if self.capacity == self._cache_list.size():
+            if self._capacity == self._cache_list.size():
                 tail = self._cache_list.tail()
                 self._cache_list.unlink(tail)
                 del self._lookup[tail.key]
@@ -46,10 +42,6 @@ class LRUCache(object):
             return n.val
 
         return -1
-
-    def print(self):
-        print([k for k, v in self._lookup.items()])
-        self.store.print()
 
 
 class LFUCache:
