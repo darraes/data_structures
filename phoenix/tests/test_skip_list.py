@@ -9,5 +9,6 @@ class TestFunctions(unittest.TestCase):
             skip_list.insert(str(i), i)
 
         self.assertEqual([2, 3, 4], skip_list.scan("2", "5"))
+        self.assertEqual([2, 3, 4, 5], skip_list.scan("2", "5", include_end = True))
         self.assertEqual([0, 1, 2, 3, 4], skip_list.scan("0", "5"))
         self.assertEqual([3, 4, 5, 6, 7], skip_list.scan("3", "9"))

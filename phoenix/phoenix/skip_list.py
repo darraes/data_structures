@@ -21,7 +21,7 @@ class SkipList:
             level += 1
         return level
 
-    def scan(self, start, end):
+    def scan(self, start, end, include_end=False):
         current = self.head
         for i in range(self.level, -1, -1):
             while current.next[i] and current.next[i].key < start:
@@ -30,7 +30,7 @@ class SkipList:
         current = current.next[0]
 
         ans = []
-        while current and current.key < end:
+        while current and (current.key < end or (include_end and current.key == end)):
             ans.append(current.val)
             current = current.next[0]
         return ans
