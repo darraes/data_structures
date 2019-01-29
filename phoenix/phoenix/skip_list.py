@@ -21,7 +21,7 @@ class SkipList:
             level += 1
         return level
 
-    def scan(self, start, end, include_end=False):
+    def scan(self, start, end, include_end=False, max_keys=10000):
         current = self.head
         for i in range(self.level, -1, -1):
             while current.next[i] and current.next[i].key < start:
@@ -30,9 +30,13 @@ class SkipList:
         current = current.next[0]
 
         ans = []
+        found = 0
         while current and (current.key < end or (include_end and current.key == end)):
             ans.append((current.key, current.val))
             current = current.next[0]
+            found += 1
+            if found >= max_keys:
+                break
         return ans
 
     def insert(self, key, val):
