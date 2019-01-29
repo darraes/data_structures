@@ -31,7 +31,7 @@ class SkipList:
 
         ans = []
         while current and (current.key < end or (include_end and current.key == end)):
-            ans.append(current.val)
+            ans.append((current.key, current.val))
             current = current.next[0]
         return ans
 
