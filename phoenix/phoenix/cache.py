@@ -117,8 +117,8 @@ class LFUCache:
     def _evict(self):
         fnode = self._freq_list.head()
 
-        k, v = fnode.c_list.pop_left()
-        del self._cache_map[k]
+        cache_node = fnode.c_list.pop_left()
+        del self._cache_map[cache_node.key]
 
         if self._freq_list.size() == 0:
             self._freq_list.pop_left()

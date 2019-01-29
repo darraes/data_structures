@@ -34,6 +34,7 @@ class SkipList:
         while current and (current.key < end or (include_end and current.key == end)):
             ans.append((current.key, current.val))
             current = current.next[0]
+
             found += 1
             if found >= max_keys:
                 break
@@ -63,13 +64,3 @@ class SkipList:
 
         if nlevel > self.level:
             self.level = nlevel
-
-    def display_list(self):
-        head = self.head
-        for lvl in range(self.level + 1):
-            print("Level {}: ".format(lvl), end=" ")
-            node = head.next[lvl]
-            while node != None:
-                print(node.key, end=" ")
-                node = node.next[lvl]
-            print("")

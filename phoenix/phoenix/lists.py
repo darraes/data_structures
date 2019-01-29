@@ -98,15 +98,13 @@ class SentinelDoublyList:
         if self.is_empty():
             raise "TODO Create Exception"
 
-        n = self.unlink(self._tail.__prev)
-        return (n.key, n.val)
+        return self.unlink(self._tail.__prev)
 
     def pop_left(self):
         if self.is_empty():
             raise "TODO Create Exception"
 
-        n = self.unlink(self._head.__next)
-        return (n.key, n.val)
+        return self.unlink(self._head.__next)
 
     def unlink(self, n):
         if SentinelDoublyList._is_sentinel(n):
