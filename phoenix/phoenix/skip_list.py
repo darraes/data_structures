@@ -37,7 +37,7 @@ class SkipList:
 
     def insert(self, key, val):
         current = self.head
-        b_links = [None] * self.max_levels
+        b_links = [self.head] * self.max_levels
 
         for i in range(self.level, -1, -1):
             while current.next[i] and current.next[i].key < key:
@@ -54,8 +54,6 @@ class SkipList:
         nlevel = self.random_level()
 
         for i in range(nlevel + 1):
-            if i > self.level:
-                b_links[i] = self.head
             node.next[i] = b_links[i].next[i]
             b_links[i].next[i] = node
 
