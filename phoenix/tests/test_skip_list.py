@@ -3,7 +3,7 @@ import unittest
 
 
 class TestFunctions(unittest.TestCase):
-    def test_3(self):
+    def test_basic_scans(self):
         skip_list = SkipList(5, 0.5)
         for i in range(8):
             skip_list.insert(str(i), i)
