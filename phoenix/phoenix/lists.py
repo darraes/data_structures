@@ -96,13 +96,13 @@ class SentinelDoublyList:
 
     def pop(self):
         if self.is_empty():
-            raise "TODO Create Exception"
+            return None
 
         return self.unlink(self._tail.__prev)
 
     def pop_left(self):
         if self.is_empty():
-            raise "TODO Create Exception"
+            return None
 
         return self.unlink(self._head.__next)
 
@@ -113,4 +113,7 @@ class SentinelDoublyList:
         n.__prev.__next = n.__next
         n.__next.__prev = n.__prev
         self._size -= 1
+
+        n.__next = None
+        n.__prev = None
         return n
