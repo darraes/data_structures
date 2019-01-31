@@ -112,8 +112,9 @@ class SentinelDoublyList:
 
         n.__prev.__next = n.__next
         n.__next.__prev = n.__prev
-        self._size -= 1
 
         n.__next = None
         n.__prev = None
+        
+        self._size -= 1
         return n

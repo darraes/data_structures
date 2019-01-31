@@ -1,4 +1,6 @@
 # Compiled source #
 ###################
 *.pyc
-&.DS_Store
+*.DS_Store
+*.json
+*.code-workspace
