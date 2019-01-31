@@ -5,6 +5,7 @@ from phoenix.monitoring import log
 
 MS_IN_SEC = 0.001
 END_WORKFLOW = -1
+WAIT_FOREVER = float("inf")
 
 
 class Workflow(ABC):
