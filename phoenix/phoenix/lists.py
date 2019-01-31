@@ -108,7 +108,7 @@ class SentinelDoublyList:
 
     def unlink(self, n):
         if SentinelDoublyList._is_sentinel(n):
-            raise "TODO Create Exception"
+            raise "TODO Exception"
 
         n.__prev.__next = n.__next
         n.__next.__prev = n.__prev
