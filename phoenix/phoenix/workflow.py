@@ -80,7 +80,7 @@ class WorkflowEngine(object):
         self._add_on = 0
         self._worker_count = worker_count
         self._workers = []
-        for i in range(worker_count):
+        for _ in range(worker_count):
             self._workers.append(WorkflowWorker())
 
     def add(self, workflow, delay_secs=0.0):
