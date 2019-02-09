@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from time import perf_counter, sleep
-from threading import RLock, Thread
+from threading import RLock, Thread, Condition
 from phoenix.monitoring import log
+from heapq import heappop, heappush
 
 MS_IN_SEC = 0.001
 END_WORKFLOW = -1
@@ -36,41 +37,50 @@ class WorkflowWorker(object):
         self._running_tasks = []
         self._idle_tasks = []
         self._lock = RLock()
+        self._signal = Condition(self._lock)
         self._stopping = False
         self._thread = Thread(target=self._run)
-        self._thread.daemon = True
+        #self._thread.daemon = True
         self._thread.start()
 
     def add_task(self, workflow, delay_secs=0.0):
-        with self._lock:
-            self._idle_tasks.append(WorkflowTask(perf_counter() + delay_secs, workflow))
+        self._lock.acquire()
+        self._idle_tasks.append(WorkflowTask(perf_counter() + delay_secs, workflow))
+        self._signal.notify()
+        self._lock.release()
 
     def stop(self):
+        self._lock.acquire()
+        log.info("Stopping workflows with %d tasks remaining",
+                 len(self._idle_tasks) + len(self._running_tasks))
         self._stopping = True
+        self._signal.notify()
+        self._lock.release()
 
     def _run(self):
         while not self._stopping:
-            worked = False
-            for task in self._running_tasks:
+            for _, task in self._running_tasks:
                 if task.when >= 0 and task.when <= perf_counter():
-                    worked = True
                     task.when = task.workflow.run_step()
                     if task.when != END_WORKFLOW:
                         task.when += perf_counter()
 
-            self._running_tasks = [
-                t for t in self._running_tasks if t.when != END_WORKFLOW
-            ]
+            while self._running_tasks and self._running_tasks[0][1].when == END_WORKFLOW:
+                heappop(self._running_tasks)
 
-            with self._lock:
-                self._running_tasks.extend(self._idle_tasks)
-                self._idle_tasks = []
+            self._lock.acquire()
+            for t in self._idle_tasks:
+                heappush(self._running_tasks, (t.when, t))
+            self._idle_tasks = []
 
-            if not worked:
-                sleep(MS_IN_SEC)
+            if not self._running_tasks:
+                self._signal.wait()
+            elif self._running_tasks[0][1].when > perf_counter():
+                self._signal.wait(timeout=self._running_tasks[0][1].when - perf_counter())
+                
+            self._lock.release()
 
-        log.info("Workflow worker stopped early")
-        for t in self._idle_tasks + self._running_tasks:
+        for _, t in self._idle_tasks + self._running_tasks:
             t.workflow.on_early_stop()
 
 
@@ -89,7 +99,7 @@ class WorkflowEngine(object):
             self._add_on = (self._add_on + 1) % self._worker_count
 
     def stop(self):
-        log.info("Stopping workflows")
+        log.info("Stopping all workflows workers (%d)", self._worker_count)
         with self._lock:
             for worker in self._workers:
                 worker.stop()
