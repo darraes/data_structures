@@ -40,12 +40,14 @@ class WorkflowWorker(object):
         self._signal = Condition(self._lock)
         self._stopping = False
         self._thread = Thread(target=self._run)
-        #self._thread.daemon = True
         self._thread.start()
 
     def add_task(self, workflow, delay_secs=0.0):
         self._lock.acquire()
+        # Adds the task to the idle list to avoid thread contention while executing
+        # the running tasks
         self._idle_tasks.append(WorkflowTask(perf_counter() + delay_secs, workflow))
+        # Notifies teh worker thread that there is at least one task to be looked at
         self._signal.notify()
         self._lock.release()
 
@@ -58,6 +60,11 @@ class WorkflowWorker(object):
         self._lock.release()
 
     def _run(self):
+        def move_idle_tasks():
+            for t in self._idle_tasks:
+                heappush(self._running_tasks, (t.when, t))
+            self._idle_tasks = []
+
         while not self._stopping:
             for _, task in self._running_tasks:
                 if task.when >= 0 and task.when <= perf_counter():
@@ -69,15 +76,14 @@ class WorkflowWorker(object):
                 heappop(self._running_tasks)
 
             self._lock.acquire()
-            for t in self._idle_tasks:
-                heappush(self._running_tasks, (t.when, t))
-            self._idle_tasks = []
+            move_idle_tasks()
 
             if not self._running_tasks:
                 self._signal.wait()
             elif self._running_tasks[0][1].when > perf_counter():
                 self._signal.wait(timeout=self._running_tasks[0][1].when - perf_counter())
-                
+            
+            move_idle_tasks()
             self._lock.release()
 
         for _, t in self._idle_tasks + self._running_tasks:

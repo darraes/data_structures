@@ -11,7 +11,7 @@ class DisjointSets:
         if self._parent[n] == n:
             return n
 
-        # Path compression technique
+        # Path compression
         self._parent[n] = self._parent(self._parent[n])
         return self._parent[n]
 
@@ -22,7 +22,7 @@ class DisjointSets:
         if p1 == p2:
             return
 
-        # Applying union by rank technique
+        # Applying union by rank
         r1 = self._rank[p1]
         r2 = self._rank[p2]
 

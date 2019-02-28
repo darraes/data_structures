@@ -2,6 +2,7 @@ from random import randint
 from bisect import bisect_right
 from collections import namedtuple
 from phoenix.utils import merge_sorted
+from typing import List
 
 Range = namedtuple("Range", ["start", "count"])
 
@@ -53,21 +54,25 @@ class ReshardUnit(object):
 class HashRing(object):
     RING_SIZE = 1 * 1000 * 1000 * 1000  # 1 Billion
 
-    def __init__(self, spreading_factor=1):
+    def __init__(self, spreading_factor: int = 1):
         self.spreading_factor = spreading_factor
         self._ring = []
 
-    def add(self, data, hash_generator=lambda: randint(0, HashRing.RING_SIZE - 1)):
+    def add(
+        self, data: object, hash_generator=lambda: randint(0, HashRing.RING_SIZE - 1)
+    ) -> List[ReshardUnit]:
         """
         Adds @self.spreading_factor new nodes to the ring. All new nodes will point
         to @data.
 
         :data: str              The data hanging on the nodes being added.
-        :hash_generator: int()  The function to generate the new nodes ring locations
+        :hash_generator: int()  The function to generate the ring location for the new nodes
                                 Must return a number in interval [0 - 1B)
         """
         moves = []
         new_nodes = []
+        # We need a copy of the previous state to be able to compute the [from -> to] data
+        # movement
         old_ring = [n for n in self._ring]
 
         for _ in range(self.spreading_factor):
@@ -86,20 +91,27 @@ class HashRing(object):
             return moves
 
         for n in new_nodes:
+            # Using the old ring (before adding the new nodes), find where the current
+            # new starting point was located.
+            # We now know where we are "moving the data from"
             from_node = HashRing._find_partition(old_ring, n.start)
-            start_node_idx = HashRing._find_partition_idx(self._ring, n.start)
-            end_node_idx = start_node_idx + 1
+            # The |start| field marks the start of the range. So everything that hashes to
+            # "the right" of that start, in other words from current.start to (current + 1).start
+            left_node_idx = HashRing._find_partition_idx(self._ring, n.start)
+            right_node_idx = left_node_idx + 1
 
-            if end_node_idx < len(self._ring):
+            # If the right node index is not outside the bounds of the array, we are not looping
+            # around on the ring, so no special case handling is necessary
+            if right_node_idx < len(self._ring):
                 moves.append(
                     ReshardUnit(
                         from_node=from_node,
-                        to_node=self._ring[start_node_idx],
+                        to_node=self._ring[left_node_idx],
                         ranges=[
                             Range(
-                                start=self._ring[start_node_idx].start,
-                                count=self._ring[end_node_idx].start
-                                - self._ring[start_node_idx].start,
+                                start=self._ring[left_node_idx].start,
+                                count=self._ring[right_node_idx].start
+                                - self._ring[left_node_idx].start,
                             )
                         ],
                     )
@@ -110,12 +122,12 @@ class HashRing(object):
                 moves.append(
                     ReshardUnit(
                         from_node=from_node,
-                        to_node=self._ring[start_node_idx],
+                        to_node=self._ring[left_node_idx],
                         ranges=[
                             Range(
-                                start=self._ring[start_node_idx].start,
+                                start=self._ring[left_node_idx].start,
                                 count=HashRing.RING_SIZE
-                                - self._ring[start_node_idx].start,
+                                - self._ring[left_node_idx].start,
                             ),
                             Range(start=0, count=self._ring[0].start),
                         ],
@@ -125,6 +137,9 @@ class HashRing(object):
         return moves
 
     def find(self, partition_key):
+        """
+        Returns the @data handing on the node covering the given partition key
+        """
         partition_hash = hash(partition_key) % HashRing.RING_SIZE
         return HashRing._find_partition(self._ring, partition_hash).data
 
@@ -132,7 +147,9 @@ class HashRing(object):
     def _create_node_hash(hash_generator, used_hashes):
         """
         We need to guarantee that two nodes don't have the exact same hash therefore we
-        loop until we create a unique new hash point
+        loop until we create a unique new hash point.
+        This could potentially loop for a long time if the ring is too dense, but this is
+        unlikely
         """
         while True:
             h = hash_generator()

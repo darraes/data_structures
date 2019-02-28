@@ -1,7 +1,7 @@
 # TODO: proper test cases
 
 from unittest import TestCase
-from phoenix.hash_ring import *
+from phoenix.hash_ring import HashRing, Node, ReshardUnit, Range
 
 
 class TestFunctions(TestCase):

@@ -120,7 +120,7 @@ class LFUCache:
         cache_node = fnode.c_list.pop_left()
         del self._cache_map[cache_node.key]
 
-        if self._freq_list.size() == 0:
+        if fnode.c_list.size() == 0:
             self._freq_list.pop_left()
 
     def _update(self, key, val):
