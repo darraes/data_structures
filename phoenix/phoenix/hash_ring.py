@@ -2,12 +2,12 @@ from random import randint
 from bisect import bisect_right
 from collections import namedtuple
 from phoenix.utils import merge_sorted
-from typing import List
+from typing import List, Set
 
-Range = namedtuple("Range", ["start", "count"])
+PartitionRange = namedtuple("PartitionRange", ["start", "count"])
 
 
-class Node(object):
+class RingNode(object):
     def __init__(self, start, data=None):
         self._start = start
         self._data = data
@@ -76,7 +76,7 @@ class HashRing(object):
         old_ring = [n for n in self._ring]
 
         for _ in range(self.spreading_factor):
-            node = Node(
+            node = RingNode(
                 start=self._create_node_hash(
                     hash_generator, set([n.start for n in old_ring])
                 ),
@@ -108,7 +108,7 @@ class HashRing(object):
                         from_node=from_node,
                         to_node=self._ring[left_node_idx],
                         ranges=[
-                            Range(
+                            PartitionRange(
                                 start=self._ring[left_node_idx].start,
                                 count=self._ring[right_node_idx].start
                                 - self._ring[left_node_idx].start,
@@ -124,27 +124,27 @@ class HashRing(object):
                         from_node=from_node,
                         to_node=self._ring[left_node_idx],
                         ranges=[
-                            Range(
+                            PartitionRange(
                                 start=self._ring[left_node_idx].start,
                                 count=HashRing.RING_SIZE
                                 - self._ring[left_node_idx].start,
                             ),
-                            Range(start=0, count=self._ring[0].start),
+                            PartitionRange(start=0, count=self._ring[0].start),
                         ],
                     )
                 )
 
         return moves
 
-    def find(self, partition_key):
+    def find(self, partition_key: str):
         """
-        Returns the @data handing on the node covering the given partition key
+        Returns the @data hanging on the node covering the given partition key
         """
         partition_hash = hash(partition_key) % HashRing.RING_SIZE
         return HashRing._find_partition(self._ring, partition_hash).data
 
     @staticmethod
-    def _create_node_hash(hash_generator, used_hashes):
+    def _create_node_hash(hash_generator, used_hashes: Set[int]):
         """
         We need to guarantee that two nodes don't have the exact same hash therefore we
         loop until we create a unique new hash point.
@@ -157,12 +157,12 @@ class HashRing(object):
                 return h
 
     @staticmethod
-    def _find_partition(ring, partition_hash):
+    def _find_partition(ring: List[RingNode], partition_hash: int):
         return ring[HashRing._find_partition_idx(ring, partition_hash)]
 
     @staticmethod
-    def _find_partition_idx(ring, partition_hash):
-        idx = bisect_right(ring, Node(partition_hash))
+    def _find_partition_idx(ring: List[RingNode], partition_hash: int):
+        idx = bisect_right(ring, RingNode(partition_hash))
         # If idx is 0, that means the current hash is smaller than the hash of the
         # node at index 0 therefore we need to grab the last node of the ring
         # (cicle to the back)

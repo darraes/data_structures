@@ -1,7 +1,7 @@
 # TODO: proper test cases
 
 from unittest import TestCase
-from phoenix.hash_ring import HashRing, Node, ReshardUnit, Range
+from phoenix.hash_ring import HashRing, RingNode, ReshardUnit, PartitionRange
 
 
 class TestFunctions(TestCase):
@@ -52,9 +52,9 @@ class TestFunctions(TestCase):
         self.assertEqual(
             [
                 ReshardUnit(
-                    Node(200000000, "shard_0"),
-                    Node(300000000, "shard_1"),
-                    [Range(300000000, 500000000 - 300000000)],
+                    RingNode(200000000, "shard_0"),
+                    RingNode(300000000, "shard_1"),
+                    [PartitionRange(300000000, 500000000 - 300000000)],
                 )
             ],
             moves,
@@ -93,9 +93,9 @@ class TestFunctions(TestCase):
         self.assertEqual(
             [
                 ReshardUnit(
-                    Node(500000000, "shard_0"),
-                    Node(600000000, "shard_1"),
-                    [Range(600000000, 800000000 - 600000000)],
+                    RingNode(500000000, "shard_0"),
+                    RingNode(600000000, "shard_1"),
+                    [PartitionRange(600000000, 800000000 - 600000000)],
                 )
             ],
             moves,
@@ -163,15 +163,18 @@ class TestFunctions(TestCase):
             "shard_0", HashRing._find_partition(ring._ring, 900000000).data
         )
 
-        # Test for when the ring has a single node
+        # Test for when the ring has a single RingNode
         moves = ring.add("shard_1", hash_generator=lambda: 400000000)
 
         self.assertEqual(
             [
                 ReshardUnit(
-                    Node(200000000, "shard_0"),
-                    Node(400000000, "shard_1"),
-                    [Range(400000000, 1000000000 - 400000000), Range(0, 200000000)],
+                    RingNode(200000000, "shard_0"),
+                    RingNode(400000000, "shard_1"),
+                    [
+                        PartitionRange(400000000, 1000000000 - 400000000),
+                        PartitionRange(0, 200000000),
+                    ],
                 )
             ],
             moves,
@@ -206,14 +209,17 @@ class TestFunctions(TestCase):
             "shard_1", HashRing._find_partition(ring._ring, 900000000).data
         )
 
-        # Test for when the ring has multiple node
+        # Test for when the ring has multiple RingNode
         moves = ring.add("shard_2", hash_generator=lambda: 600000000)
         self.assertEqual(
             [
                 ReshardUnit(
-                    Node(400000000, "shard_1"),
-                    Node(600000000, "shard_2"),
-                    [Range(600000000, 1000000000 - 600000000), Range(0, 200000000)],
+                    RingNode(400000000, "shard_1"),
+                    RingNode(600000000, "shard_2"),
+                    [
+                        PartitionRange(600000000, 1000000000 - 600000000),
+                        PartitionRange(0, 200000000),
+                    ],
                 )
             ],
             moves,
@@ -281,14 +287,14 @@ class TestFunctions(TestCase):
             "shard_0", HashRing._find_partition(ring._ring, 900000000).data
         )
 
-        # Test for when the ring has a single node
+        # Test for when the ring has a single RingNode
         moves = ring.add("shard_1", hash_generator=lambda: 200000000)
         self.assertEqual(
             [
                 ReshardUnit(
-                    Node(500000000, "shard_0"),
-                    Node(200000000, "shard_1"),
-                    [Range(200000000, 500000000 - 200000000)],
+                    RingNode(500000000, "shard_0"),
+                    RingNode(200000000, "shard_1"),
+                    [PartitionRange(200000000, 500000000 - 200000000)],
                 )
             ],
             moves,
@@ -323,14 +329,14 @@ class TestFunctions(TestCase):
             "shard_0", HashRing._find_partition(ring._ring, 900000000).data
         )
 
-        # Test for when the ring has multiple nodes
+        # Test for when the ring has multiple RingNodes
         moves = ring.add("shard_2", hash_generator=lambda: 100000000)
         self.assertEqual(
             [
                 ReshardUnit(
-                    Node(500000000, "shard_0"),
-                    Node(100000000, "shard_2"),
-                    [Range(100000000, 200000000 - 100000000)],
+                    RingNode(500000000, "shard_0"),
+                    RingNode(100000000, "shard_2"),
+                    [PartitionRange(100000000, 200000000 - 100000000)],
                 )
             ],
             moves,
